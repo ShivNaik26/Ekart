@@ -74,18 +74,27 @@ pipeline {
         }
 
         stage('Push image to Hub'){
-            steps{
-                script{
-                   withCredentials([string(credentialsId: 'dockerhub-pwd', variable: 'dockerhubpwd')]) {
-                   sh 'docker login -u ShivNaik26 -p ${dockerhubpwd}'}
-                   sh 'docker push ShivNaik26/ekart:latest'
-                }
+    steps{
+        script{
+            withCredentials([usernamePassword(
+                credentialsId: 'dockerhub-pwd',
+                usernameVariable: 'DOCKERHUB_USER',
+                passwordVariable: 'DOCKERHUB_PASS'
+            )]) {
+                sh '''
+                    set +x
+                    echo "$DOCKERHUB_PASS" | docker login --username "$DOCKERHUB_USER" --password-stdin
+                '''
             }
+
+            sh 'docker push ShivNaik26/ekart:latest'
         }
+    }
+}
         stage('EKS and Kubectl configuration'){
             steps{
                 script{
-                    sh 'aws eks update-kubeconfig --region ap-south-1 --name project-cluster'
+                    sh 'aws eks update-kubeconfig --region ap-south-1 --name aws-devops-eks'
                 }
             }
         }
